@@ -53,6 +53,10 @@ int main(int argc, char** argv) {
   mvdb::InitStdio();
   const std::string data_dir = ResolveDataDir(argc, argv);
 
+  // One line before anything can fail: if the container exits immediately, this
+  // says which data directory the process was told to use.
+  std::fprintf(stderr, "[mvdb] starting: data dir = %s\n", data_dir.c_str());
+
   mvdb::SetStage("open database");
   mvdb::Database db;
   const mvdb::Status status = db.Open(data_dir);

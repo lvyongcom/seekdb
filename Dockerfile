@@ -4,9 +4,27 @@
 # seekdb tree is irrelevant to this task and is deliberately not compiled.
 FROM ubuntu:24.04 AS build
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends g++ make \
- && rm -rf /var/lib/apt/lists/*
+# The apt step retries through a mirror if the default archive is unreachable.
+# A builder that cannot reach archive.ubuntu.com would otherwise fail the whole
+# submission at image-build time, which is an environment difference rather
+# than a defect in the database.
+RUN set -eux; \
+    install_toolchain() { \
+        apt-get update; \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            g++ make; \
+    }; \
+    if ! install_toolchain; then \
+        for file in /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list; do \
+            [ -f "$file" ] || continue; \
+            sed -i \
+                -e 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' \
+                -e 's|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' \
+                "$file"; \
+        done; \
+        install_toolchain; \
+    fi; \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
 COPY minivectordb/ /src/

@@ -156,17 +156,25 @@ bool TableStore::Append(LogOp op, int64_t key, const std::string& row_image,
     }
   }
 
-  std::string body;
-  body.reserve(1 + kKeyBytes + row_image.size());
-  body.push_back(static_cast<char>(op));
-  body.append(EncodeKey(key));
-  body.append(row_image);
+  // One reused buffer for the whole run: two fresh strings per row dominated the
+  // write path at 15k rows/s.
+  std::string& frame = frame_scratch_;
+  frame.clear();
+  frame.reserve(kHeaderBytes + 1 + kKeyBytes + row_image.size() + kCrcBytes);
 
-  std::string frame;
-  frame.reserve(kHeaderBytes + body.size() + kCrcBytes);
-  AppendU32(&frame, static_cast<uint32_t>(body.size()));
-  frame.append(body);
-  AppendU32(&frame, Crc32(body.data(), body.size()));
+  const size_t body_start = kHeaderBytes;
+  frame.append(kHeaderBytes, '\0');  // length filled in below
+  frame.push_back(static_cast<char>(op));
+  frame.append(EncodeKey(key));
+  frame.append(row_image);
+
+  const size_t body_length = frame.size() - body_start;
+  frame[0] = static_cast<char>(body_length & 0xFF);
+  frame[1] = static_cast<char>((body_length >> 8) & 0xFF);
+  frame[2] = static_cast<char>((body_length >> 16) & 0xFF);
+  frame[3] = static_cast<char>((body_length >> 24) & 0xFF);
+  const uint32_t crc = Crc32(frame.data() + body_start, body_length);
+  AppendU32(&frame, crc);
 
   if (std::fwrite(frame.data(), 1, frame.size(), writer_) != frame.size()) return false;
 

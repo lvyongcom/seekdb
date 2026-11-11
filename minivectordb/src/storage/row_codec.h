@@ -22,6 +22,11 @@ namespace mvdb {
 std::string EncodeRow(const std::vector<ColumnDef>& columns,
                       const std::vector<Value>& values);
 
+// Appends into a caller-owned buffer so a bulk insert does not allocate a fresh
+// string per row. `out` is cleared first.
+void EncodeRowInto(const std::vector<ColumnDef>& columns,
+                   const std::vector<Value>& values, std::string* out);
+
 // Returns false when the buffer is truncated or does not match the schema.
 bool DecodeRow(const std::vector<ColumnDef>& columns, const std::string& bytes,
                std::vector<Value>* values);

@@ -108,6 +108,10 @@ class TableStore {
   std::string cache_;
   bool cache_active_ = false;
 
+  // Reused frame buffer: a fresh pair of strings per row was pure allocation
+  // overhead on the write path.
+  std::string frame_scratch_;
+
   std::unordered_map<int64_t, uint64_t> live_;
 };
 

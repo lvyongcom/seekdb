@@ -61,25 +61,30 @@ std::string EncodeRow(const std::vector<ColumnDef>& columns,
                       const std::vector<Value>& values) {
   std::string out;
   out.reserve(32);
+  EncodeRowInto(columns, values, &out);
+  return out;
+}
+
+void EncodeRowInto(const std::vector<ColumnDef>& columns,
+                   const std::vector<Value>& values, std::string* out) {
+  out->clear();
   for (size_t i = 0; i < columns.size(); ++i) {
     const ColumnDef& column = columns[i];
     const Value& value = values[i];
     switch (column.type) {
       case ColumnType::BigInt:
-        AppendI64(&out, value.integer);
+        AppendI64(out, value.integer);
         break;
       case ColumnType::VarChar:
-        AppendU32(&out, static_cast<uint32_t>(value.text.size()));
-        out.append(value.text);
+        AppendU32(out, static_cast<uint32_t>(value.text.size()));
+        out->append(value.text);
         break;
       case ColumnType::Vector:
-        for (const float element : value.vec) AppendF32(&out, element);
+        for (const float element : value.vec) AppendF32(out, element);
         break;
     }
   }
-  return out;
 }
-
 bool DecodeRow(const std::vector<ColumnDef>& columns, const std::string& bytes,
                std::vector<Value>* values) {
   values->assign(columns.size(), Value());
