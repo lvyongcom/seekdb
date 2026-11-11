@@ -1,0 +1,11 @@
+# The build context is the repository root, which also holds the whole seekdb
+# tree. Only the standalone database sources are needed.
+*
+!minivectordb
+
+# Never ship host build artifacts: the Windows .o/.exe files would be reused by
+# make inside the Linux build and fail to link.
+minivectordb/build
+minivectordb/protocol-results
+minivectordb/tests/__pycache__
+minivectordb/tmpdata*

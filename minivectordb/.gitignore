@@ -1,0 +1,11 @@
+build/
+protocol-results/
+.tmpdata/
+tmpdata*/
+probe.log
+__pycache__/
+
+# The seekdb repository root .gitignore has a bare `Makefile` rule (it ignores
+# generated makefiles), which would silently drop our build file from commits.
+# A negation in this deeper .gitignore takes precedence over it.
+!Makefile
